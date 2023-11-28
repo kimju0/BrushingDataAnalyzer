@@ -148,7 +148,7 @@ class _MyAppState extends State<MyApp> {
             return Scaffold(
               appBar: AppBar(
                 centerTitle: true,
-                title: const Text('양치 데이터 분석기-22:20'),
+                title: const Text('양치 데이터 분석기'),
               ),
               body: SingleChildScrollView(
                 child: Column(
@@ -221,7 +221,7 @@ class _MyAppState extends State<MyApp> {
                       visible: _visibility,
                       child: TextButton(
                         //누르면 다른 화면으로 넘어가는 버튼
-                        child: const Text("수집 종료 및 결과 확인"),
+                        child: const Text("결과 확인"),
                         onPressed: () {
                           Navigator.push(
                               ctx,
@@ -229,7 +229,11 @@ class _MyAppState extends State<MyApp> {
                                   builder: (context) => const ResultPage()));
                         },
                       ),
-                    )
+                    ),
+                    //Text(record[0].date),
+                    //Text(record[0].brushingMethod),
+                    //Text(record[0].sectionRatio),
+                    //Text(record[0].brushingTime),
                   ],
                 ),
               ),
@@ -242,97 +246,122 @@ class _MyAppState extends State<MyApp> {
 class ResultPage extends StatelessWidget {
   const ResultPage({super.key});
 
+  void pushDataBase() async {
+    await database.into(database.previousRecord).insert(PreviousRecordCompanion.insert(
+        date: "${e.year}-${e.month}-${e.day} ${e.hour}:${e.minute}",
+        brushingTime:
+            "${e.difference(s).inMinutes}:${(e.difference(s).inSeconds) % 60}",
+        sectionRatio:
+            "${(leftCount / (leftCount + rightCount) * 100).ceil()} : ${100 - (leftCount / (leftCount + rightCount) * 100).ceil()}",
+        brushingMethod:
+            (100 > ((correctMethod / totalCountMethod) * 100).ceil())
+                ? "${((correctMethod / totalCountMethod) * 100).ceil()}%"
+                : "100"));
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: const Text("양치 데이터 분석기"),
-      ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Column(
-            children: [
-              Container(
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                      image: AssetImage('assets/teeth.png'), fit: BoxFit.cover),
+    return Builder(builder: (ctx) {
+      return Scaffold(
+        appBar: AppBar(
+          centerTitle: true,
+          title: const Text("양치 데이터 분석기"),
+        ),
+        body: SingleChildScrollView(
+          child: Center(
+            child: Column(
+              children: [
+                Container(
+                  decoration: const BoxDecoration(
+                    image: DecorationImage(
+                        image: AssetImage('assets/teeth.png'),
+                        fit: BoxFit.cover),
+                  ),
+                  height: 300,
+                  width: 300,
+                  child: Row(
+                    children: [
+                      Flexible(
+                          fit: FlexFit.tight,
+                          child: Container(
+                              child: Center(
+                                  child: Text(
+                            "${(leftCount / (leftCount + rightCount) * 100).ceil()}",
+                            style: TextStyle(fontSize: 40, color: Colors.red),
+                          ))),
+                          flex: 5),
+                      Flexible(
+                          fit: FlexFit.tight,
+                          child: Container(
+                              child: VerticalDivider(
+                            thickness: 1,
+                            width: 1,
+                            color: Colors.blue,
+                          )),
+                          flex: 5),
+                      Flexible(
+                          fit: FlexFit.tight,
+                          child: Container(
+                              child: Center(
+                                  child: Text(
+                            "${100 - (leftCount / (leftCount + rightCount) * 100).ceil()}",
+                            style: TextStyle(fontSize: 40, color: Colors.red),
+                          ))),
+                          flex: 5),
+                    ],
+                  ),
                 ),
-                height: 300,
-                width: 300,
-                child: Row(
-                  children: [
-                    Flexible(
-                        fit: FlexFit.tight,
-                        child: Container(
-                            child: Center(
-                                child: Text(
-                          "${(leftCount / (leftCount + rightCount) * 100).ceil()}",
-                          style: TextStyle(fontSize: 40, color: Colors.red),
-                        ))),
-                        flex: 5),
-                    Flexible(
-                        fit: FlexFit.tight,
-                        child: Container(
-                            child: VerticalDivider(
-                          thickness: 1,
-                          width: 1,
-                          color: Colors.blue,
-                        )),
-                        flex: 5),
-                    Flexible(
-                        fit: FlexFit.tight,
-                        child: Container(
-                            child: Center(
-                                child: Text(
-                          "${100 - (leftCount / (leftCount + rightCount) * 100).ceil()}",
-                          style: TextStyle(fontSize: 40, color: Colors.red),
-                        ))),
-                        flex: 5),
-                  ],
-                ),
-              ),
-              DataTable(columns: const [
-                DataColumn(label: Text('항목')),
-                DataColumn(label: Text('권장 수치')),
-                DataColumn(label: Text('수집 데이타')),
-              ], rows: [
-                DataRow(cells: [
-                  //양치 시간
-                  const DataCell(Text("양치 시간")),
-                  const DataCell(Text("3:00")),
-                  DataCell(Text(
-                      "${e.difference(s).inMinutes}:${(e.difference(s).inSeconds) % 60}")),
+                DataTable(columns: const [
+                  DataColumn(label: Text('항목')),
+                  DataColumn(label: Text('권장 수치')),
+                  DataColumn(label: Text('수집 데이타')),
+                ], rows: [
+                  DataRow(cells: [
+                    //양치 시간
+                    const DataCell(Text("양치 시간")),
+                    const DataCell(Text("3:00")),
+                    DataCell(Text(
+                        "${e.difference(s).inMinutes}:${(e.difference(s).inSeconds) % 60}")),
+                  ]),
+                  DataRow(cells: [
+                    //양치 횟수(좌우 비율)
+                    const DataCell(Text("양치 비율")),
+                    const DataCell(Text("50:50")),
+                    DataCell(Text(
+                        "${(leftCount / (leftCount + rightCount) * 100).ceil()} : ${100 - (leftCount / (leftCount + rightCount) * 100).ceil()}")),
+                  ]),
+                  DataRow(cells: [
+                    //양치 방법
+                    const DataCell(Text("양치 방법")),
+                    const DataCell(Text("100%")),
+                    DataCell(Text((100 >
+                            ((correctMethod / totalCountMethod) * 100).ceil())
+                        ? "${((correctMethod / totalCountMethod) * 100).ceil()}%"
+                        : "100")),
+                  ]),
+                  // DataRow(cells: [//시간당 양치 횟수
+                  //   DataCell(Text("양치 횟수/분")),
+                  //   DataCell(Text("data1")),
+                  //   DataCell(Text("data1")),
+                  // ]),
                 ]),
-                DataRow(cells: [
-                  //양치 횟수(좌우 비율)
-                  const DataCell(Text("양치 비율")),
-                  const DataCell(Text("50:50")),
-                  DataCell(Text(
-                      "${(leftCount / (leftCount + rightCount) * 100).ceil()} : ${100 - (leftCount / (leftCount + rightCount) * 100).ceil()}")),
-                ]),
-                DataRow(cells: [
-                  //양치 방법
-                  const DataCell(Text("양치 방법")),
-                  const DataCell(Text("100%")),
-                  DataCell(Text((100 >
-                          ((correctMethod / totalCountMethod) * 100).ceil())
-                      ? "${((correctMethod / totalCountMethod) * 100).ceil()}%"
-                      : "100")),
-                ]),
-                // DataRow(cells: [//시간당 양치 횟수
-                //   DataCell(Text("양치 횟수/분")),
-                //   DataCell(Text("data1")),
-                //   DataCell(Text("data1")),
-                // ]),
-              ]),
-              const Text(
-                  "아래 주소를 통해 올바른 양치법 학습:\nhttp://www.kacpd.org/general/sub01.html")
-            ],
+                const Text(
+                    "아래 주소를 통해 올바른 양치법 학습:\nhttp://www.kacpd.org/general/sub01.html"),
+                TextButton(
+                    child: Text("이전 결과 확인"),
+                    onPressed: () {
+                      Navigator.push(
+                          ctx,
+                          MaterialPageRoute(
+                              builder: (context) => const PreviousRecord()));
+                    }),
+                TextButton(child: const Text("결과 저장하기"), onPressed: pushDataBase)
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 }
 
@@ -342,26 +371,35 @@ class PreviousRecord extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text("이전 결과"),
-          centerTitle: true,
+      appBar: AppBar(
+        title: const Text("이전 결과"),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        child: Center(
+          child: Column(children: [
+            DataTable(
+                columns: const [
+                  DataColumn(label: Text("date")),
+                  DataColumn(label: Text("brushingTime")),
+                  DataColumn(label: Text("sectionRatio")),
+                  DataColumn(label: Text("brushingMethod")),
+                ],
+                rows: record.isNotEmpty
+                    ? List.generate(
+                        record.length,
+                        (index) => DataRow(cells: [
+                              DataCell(Text(record[index].date)),
+                              DataCell(Text(record[index].brushingTime)),
+                              DataCell(Text(record[index].sectionRatio)),
+                              DataCell(Text(record[index].brushingMethod)),
+                            ]))
+                    : [
+                        const DataRow(cells: [DataCell(Text("empty"))])
+                      ])
+          ]),
         ),
-        body: SingleChildScrollView(
-          child: Center(
-            child: Column(
-              children: [
-                //for debuggind
-                ListView.builder(
-                  itemCount: record.length,
-                    itemBuilder: (BuildContext context, int index){return Text("$record");}
-                )
-                /*
-                //차트 형식으로 이전 결과 보여주기
-                for()
-                 */
-              ],
-            ),
-          ),
-        ));
+      ),
+    );
   }
 }
