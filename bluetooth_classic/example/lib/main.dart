@@ -28,7 +28,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
   final _bluetoothClassicPlugin = BluetoothClassic();
   List<Device> _devices = [];
   List<Device> _discoveredDevices = [];
@@ -86,9 +85,7 @@ class _MyAppState extends State<MyApp> {
 
     if (!mounted) return;
 
-    setState(() {
-      _platformVersion = platformVersion;
-    });
+    setState(() {});
   }
 
   Future<void> _getDevices() async {
@@ -98,38 +95,11 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  Future<void> _scan() async {
-    if (_scanning) {
-      await _bluetoothClassicPlugin.stopScan();
-      setState(() {
-        _scanning = false;
-      });
-    } else {
-      await _bluetoothClassicPlugin.startScan();
-      _bluetoothClassicPlugin.onDeviceDiscovered().listen(
-        (event) {
-          setState(() {
-            _discoveredDevices = [..._discoveredDevices, event];
-          });
-        },
-      );
-      setState(() {
-        _scanning = true;
-      });
-    }
-  }
-
   bool _visibility = false;
 
   void showVisibility() {
     setState(() {
       _visibility = true;
-    });
-  }
-
-  void _hide_visibility() {
-    setState(() {
-      _visibility = false;
     });
   }
 
