@@ -8,7 +8,7 @@ import 'package:bluetooth_classic/bluetooth_classic.dart';
 import 'database.dart';
 
 final database = AppDatabase();
-List<PreviousRecordData> record = []; //null이 들어올 수도 있으니 유의하자
+List<PreviousRecordData> record = []; //null이 들어올 수도 있으니 유의
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,7 +35,6 @@ class _MyAppState extends State<MyApp> {
   bool _scanning = false;
   int _deviceStatus = Device.disconnected;
 
-  //Uint8List _data = Uint8List(0);
   List<int> _dataFir = [0, 0, 0, 0];
   List<int> _dataSex = [0, 0, 0, 0]; //이전 값
   @override
@@ -76,11 +75,8 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
     String platformVersion;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    // We also handle the message potentially returning null.
     try {
       platformVersion = await _bluetoothClassicPlugin.getPlatformVersion() ??
           'Unknown platform version';
@@ -88,9 +84,6 @@ class _MyAppState extends State<MyApp> {
       platformVersion = 'Failed to get platform version.';
     }
 
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
     if (!mounted) return;
 
     setState(() {
@@ -126,7 +119,8 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-  bool _visibility = false; //안보이다가 조건을 충족하면 보이게 함
+  bool _visibility = false;
+
   void showVisibility() {
     setState(() {
       _visibility = true;
@@ -153,7 +147,6 @@ class _MyAppState extends State<MyApp> {
               body: SingleChildScrollView(
                 child: Column(
                   children: [
-//Text("Device status is $_deviceStatus"),
                     TextButton(
                       onPressed: () async {
                         await _bluetoothClassicPlugin.initPermissions();
@@ -173,17 +166,7 @@ class _MyAppState extends State<MyApp> {
                       child: const Text("연결 해제"),
                     ),
 
-// TextButton(
-//   onPressed: _deviceStatus == Device.connected
-//       ? () async {
-//           await _bluetoothClassicPlugin.write("ping");
-//         }
-//       : null,
-//   child: const Text("send ping"),
-// ),
-                    const Center(
-//child: Text('Running on: $_platformVersion\n'),
-                        ),
+                    const Center(),
                     ...[
                       for (var device in _devices)
                         TextButton(
@@ -201,18 +184,6 @@ class _MyAppState extends State<MyApp> {
                             child: Text(device.name ?? device.address))
                     ],
 
-//아래 코드는 새로운 기기를 페어링하는 코드
-// TextButton(
-//   onPressed: _scan,
-//   child: Text(_scanning ? "Stop Scan" : "Start Scan"),
-// ),
-// ...[
-//   for (var device in _discoveredDevices)
-//     Text(device.name ?? device.address)
-// ],
-
-//아래 코드 수정
-//Text("Received data: ${String.fromCharCodes(_data)}"),
                     Text(!_visibility
                         ? "연결하면 데이터 수집 시작"
                         : "Received data: ${_dataFir.join(", ")}"), //for 디버깅
@@ -220,7 +191,6 @@ class _MyAppState extends State<MyApp> {
                     Visibility(
                       visible: _visibility,
                       child: TextButton(
-                        //누르면 다른 화면으로 넘어가는 버튼
                         child: const Text("결과 확인"),
                         onPressed: () {
                           Navigator.push(
@@ -230,10 +200,6 @@ class _MyAppState extends State<MyApp> {
                         },
                       ),
                     ),
-                    //Text(record[0].date),
-                    //Text(record[0].brushingMethod),
-                    //Text(record[0].sectionRatio),
-                    //Text(record[0].brushingTime),
                   ],
                 ),
               ),
@@ -283,31 +249,32 @@ class ResultPage extends StatelessWidget {
                     children: [
                       Flexible(
                           fit: FlexFit.tight,
+                          flex: 5,
                           child: Container(
                               child: Center(
                                   child: Text(
                             "${(leftCount / (leftCount + rightCount) * 100).ceil()}",
-                            style: TextStyle(fontSize: 40, color: Colors.red),
-                          ))),
-                          flex: 5),
+                            style: const TextStyle(
+                                fontSize: 40, color: Colors.red),
+                          )))),
                       Flexible(
                           fit: FlexFit.tight,
+                          flex: 5,
                           child: Container(
-                              child: VerticalDivider(
+                              child: const VerticalDivider(
                             thickness: 1,
                             width: 1,
                             color: Colors.blue,
-                          )),
-                          flex: 5),
+                          ))),
                       Flexible(
                           fit: FlexFit.tight,
-                          child: Container(
-                              child: Center(
-                                  child: Text(
+                          flex: 5,
+                          child: Center(
+                              child: Text(
                             "${100 - (leftCount / (leftCount + rightCount) * 100).ceil()}",
-                            style: TextStyle(fontSize: 40, color: Colors.red),
+                            style: const TextStyle(
+                                fontSize: 40, color: Colors.red),
                           ))),
-                          flex: 5),
                     ],
                   ),
                 ),
@@ -339,23 +306,19 @@ class ResultPage extends StatelessWidget {
                         ? "${((correctMethod / totalCountMethod) * 100).ceil()}%"
                         : "100")),
                   ]),
-                  // DataRow(cells: [//시간당 양치 횟수
-                  //   DataCell(Text("양치 횟수/분")),
-                  //   DataCell(Text("data1")),
-                  //   DataCell(Text("data1")),
-                  // ]),
                 ]),
                 const Text(
                     "아래 주소를 통해 올바른 양치법 학습:\nhttp://www.kacpd.org/general/sub01.html"),
                 TextButton(
-                    child: Text("이전 결과 확인"),
+                    child: const Text("이전 결과 확인"),
                     onPressed: () {
                       Navigator.push(
                           ctx,
                           MaterialPageRoute(
                               builder: (context) => const PreviousRecord()));
                     }),
-                TextButton(child: const Text("결과 저장하기"), onPressed: pushDataBase)
+                TextButton(
+                    onPressed: pushDataBase, child: const Text("결과 저장하기"))
               ],
             ),
           ),
