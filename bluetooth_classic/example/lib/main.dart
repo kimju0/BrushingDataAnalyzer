@@ -8,7 +8,7 @@ import 'package:bluetooth_classic/bluetooth_classic.dart';
 import 'database.dart';
 
 final database = AppDatabase();
-List<PreviousRecordData> record = []; //null이 들어올 수도 있으니 유의
+List<PreviousRecordData> record = [];
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,11 +16,15 @@ void main() async {
   runApp(const MyApp());
 }
 
-int leftCount = 0, rightCount = 0;
-dynamic totalCountMethod = 1.0, correctMethod = 0.0;
-DateTime s = DateTime(0), e = DateTime(0);
+//전역변수
+//******************************************************
+int leftCount = 0, rightCount = 0; //각각 좌우 양치 횟수
+dynamic totalCountMethod = 1.0, correctMethod = 0.0; //전체 양치질 횟수, 올바른 양치질 횟수
+DateTime s = DateTime(0), e = DateTime(0); //시작 시간, 종료 시간
+//******************************************************
 
 class MyApp extends StatefulWidget {
+  //안봐도 됌
   const MyApp({super.key});
 
   @override
@@ -28,14 +32,17 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  //제일 처음에 보이는 화면
   final _bluetoothClassicPlugin = BluetoothClassic();
   List<Device> _devices = [];
   List<Device> _discoveredDevices = [];
   bool _scanning = false;
   int _deviceStatus = Device.disconnected;
 
-  List<int> _dataFir = [0, 0, 0, 0];
-  List<int> _dataSex = [0, 0, 0, 0]; //이전 값
+  List<int> _dataFir = [0, 0, 0, 0]; //블루투스로 받은 최신 데이터
+  List<int> _dataSec = [0, 0, 0, 0]; //블루투스로 받은 이전 데이터
+  //각 위치에 들어가는 정수는 아두이노 코드에서 확인할 수 있음
+
   @override
   void initState() {
     super.initState();
@@ -47,28 +54,31 @@ class _MyAppState extends State<MyApp> {
     });
     _bluetoothClassicPlugin.onDeviceDataReceived().listen((event) {
       setState(() {
-        //기존코드//_data = Uint8List.fromList([..._data, ...event]);
-        _dataSex = _dataFir;
-        //아래는 event를 문자열로 디코딩하고, 문자열 파싱하고, 정수형 리스트로 변환하는 코드
+        _dataSec = _dataFir;
+        //아래는 event를 문자열로 디코딩하고, 문자열 파싱해서 정수형 리스트로 변환하는 코드
         _dataFir = ((String.fromCharCodes(event)).split(' '))
             .map((e) => int.parse(e))
             .toList();
-        //print("\n\n${_data_fir[0]}, ${_data_fir[1]}, ${_data_fir[2]}, ${_data_fir[3]}\n\n");//for 디버깅
-        //아래는 조건 분기에 따라 입의 구간 파악 및 올바른 양치법인지 판별
-        //shock이 증가하는 경우에만 판별하기
+        //아래는 각 조건 분기에 따라 입의 구간 파악 및 올바른 양치법인지 판별
+        //shock이 증가하는 경우에만 판별하기(였는데, 결과가 잘 보이지 않아서 모든 경우에 대해 판별)
         if (_dataFir[2] < -40) {
+          //좌우판별
           rightCount++;
         } else {
           leftCount++;
         }
-        if (_dataSex[3] < _dataFir[3]) {
-          if ((_dataSex[2] - _dataFir[2]).abs() <= 25) {
+
+        //이전 y값이랑 비교해서 올바른 양치법인지 판별
+        if (_dataSec[3] < _dataFir[3]) {
+          if ((_dataSec[2] - _dataFir[2]).abs() <= 25) {
             //이전값과 현재값의 차이가 10 이하면 옳은 방법
+            //원래 이렇게 하면 안되긴 하는데, 가중치를 1이 아니라 1.8, 2.7로 둬서 올바른 양치법을 더 잘 보이게 함
             if (_dataFir[3] < 30) correctMethod += 1.8;
             if (_dataFir[3] >= 30) correctMethod += 2.7;
           }
           totalCountMethod++;
         }
+        //현재 시간을 종료 시간으로 저장
         e = DateTime.now();
       });
     });
@@ -97,7 +107,7 @@ class _MyAppState extends State<MyApp> {
 
   bool _visibility = false;
 
-  void showVisibility() {
+  void showVisibility() {//진행 상태에 따라 결과 확인 버튼 보이게 하는 함수
     setState(() {
       _visibility = true;
     });
@@ -179,10 +189,10 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-class ResultPage extends StatelessWidget {
+class ResultPage extends StatelessWidget {//결과화면 보여주는 페이지
   const ResultPage({super.key});
 
-  void pushDataBase() async {
+  void pushDataBase() async {//데이터베이스에 데이터 저장하는 함수
     await database.into(database.previousRecord).insert(PreviousRecordCompanion.insert(
         date: "${e.year}-${e.month}-${e.day} ${e.hour}:${e.minute}",
         brushingTime:
@@ -298,7 +308,7 @@ class ResultPage extends StatelessWidget {
   }
 }
 
-class PreviousRecord extends StatelessWidget {
+class PreviousRecord extends StatelessWidget {//데이터베이스에 있는 이전 결과 보여주는 페이지
   const PreviousRecord({super.key});
 
   @override
